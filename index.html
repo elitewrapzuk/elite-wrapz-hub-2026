@@ -33,7 +33,6 @@
 
         .center-wing { display: flex; justify-content: center; }
         
-        /* CLEANED BRAND ANIMATION */
         .brand-link { 
             text-decoration: none; font-family: 'Syncopate'; font-size: 0.95rem; 
             letter-spacing: 4px; color: #fff; transition: letter-spacing 0.4s cubic-bezier(0.4, 0, 0.2, 1), text-shadow 0.4s ease;
@@ -64,7 +63,20 @@
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-size: 0.7rem; }
 
         /* --- CARDS --- */
-        .floating-card { position: absolute; background: var(--glass); border: 1px solid var(--border); border-radius: 8px; backdrop-filter: blur(25px); display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 200px; min-height: 100px; cursor: grab; }
+        .floating-card { 
+            position: absolute; 
+            background: var(--glass); 
+            border: 1px solid var(--border); 
+            border-radius: 8px; 
+            backdrop-filter: blur(25px); 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            resize: both; 
+            min-width: 200px; 
+            min-height: 100px; 
+            cursor: grab; 
+        }
         .floating-card:active { cursor: grabbing; }
         
         .card-header { 
@@ -260,12 +272,17 @@
                 document.querySelectorAll('.floating-card').forEach(x=>x.style.zIndex=1); 
                 el.style.zIndex=100;
 
+                // --- RESIZE GUARD ---
+                // If clicking within 20px of the bottom-right corner, ignore drag logic
+                const rect = el.getBoundingClientRect();
+                const isResizeHandle = (e.clientX > rect.right - 20) && (e.clientY > rect.bottom - 20);
+                
                 // Priority Check for icons and inputs
                 const isIcon = e.target.closest('.header-icons');
                 const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
                 const isAction = e.target.closest('.delete-trigger') || e.target.tagName === 'A';
 
-                if (isIcon || isInput || isAction) return;
+                if (isResizeHandle || isIcon || isInput || isAction) return;
 
                 let p3 = e.clientX, p4 = e.clientY;
 
