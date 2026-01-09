@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELITE HUB | Final Master</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --elite-green: #01fabf;
+            --bg: #050505;
+            --glass: rgba(10, 10, 10, 0.95);
+            --border: rgba(1, 250, 191, 0.15);
+            --vault-red: #ff3e3e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: var(--bg); color: #fff; font-family: 'Outfit', sans-serif; 
+            height: 100vh; width: 100vw; overflow: hidden;
+            background-image: radial-gradient(rgba(1, 250, 191, 0.12) 1.5px, transparent 1.5px);
+            background-size: 30px 30px;
+        }
+
+        /* --- HUD --- */
+        .top-bar { 
+            position: fixed; top: 0; width: 100%; padding: 30px 50px; 
+            display: grid; grid-template-columns: 1.5fr 1fr 1.5fr; align-items: center; z-index: 1000; 
+        }
+
+        #time { font-family: 'Syncopate'; font-size: 1.4rem; color: var(--elite-green); display: flex; align-items: baseline; }
+        #time span { font-size: 0.8rem; opacity: 0.4; margin-left: 6px; width: 25px; display: inline-block; font-variant-numeric: tabular-nums; }
+
+        .center-wing { display: flex; justify-content: center; }
+        
+        /* CLEANED BRAND ANIMATION */
+        .brand-link { 
+            text-decoration: none; font-family: 'Syncopate'; font-size: 0.95rem; 
+            letter-spacing: 4px; color: #fff; transition: letter-spacing 0.4s cubic-bezier(0.4, 0, 0.2, 1), text-shadow 0.4s ease;
+            text-align: center; white-space: nowrap; position: relative;
+        }
+        .brand-link span { color: var(--elite-green); }
+        .brand-link:hover { 
+            letter-spacing: 10px; 
+            text-shadow: 0 0 12px rgba(1, 250, 191, 0.5);
+        }
+
+        .right-wing { display: flex; align-items: center; justify-content: flex-end; gap: 30px; }
+        .hud-search-wrap { border-bottom: 1px solid rgba(1, 250, 191, 0.2); width: 120px; padding: 2px 0; transition: 0.4s; }
+        .hud-search-wrap:focus-within { width: 200px; border-bottom-color: var(--elite-green); }
+        .hud-search-input { background: transparent; border: none; color: var(--elite-green); font-family: 'Syncopate'; font-size: 0.6rem; outline: none; width: 100%; letter-spacing: 2px; }
+
+        #date-trigger { font-size: 0.65rem; letter-spacing: 2px; opacity: 0.4; cursor: pointer; transition: 0.3s; text-transform: uppercase; }
+        #date-trigger:hover { opacity: 1; color: var(--elite-green); }
+
+        /* --- CALENDAR --- */
+        #calendar-popup {
+            position: absolute; top: 40px; right: 0; background: #0a0a0a;
+            border: 1px solid var(--border); border-radius: 8px; padding: 15px;
+            width: 260px; display: none; flex-direction: column; z-index: 5000;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9); backdrop-filter: blur(15px);
+        }
+        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-family: 'Syncopate'; font-size: 0.55rem; color: var(--elite-green); }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-size: 0.7rem; }
+
+        /* --- CARDS --- */
+        .floating-card { position: absolute; background: var(--glass); border: 1px solid var(--border); border-radius: 8px; backdrop-filter: blur(25px); display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 200px; min-height: 100px; cursor: grab; }
+        .floating-card:active { cursor: grabbing; }
+        
+        .card-header { 
+            padding: 12px 16px; 
+            background: rgba(1, 250, 191, 0.05); 
+            border-bottom: 1px solid var(--border); 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            width: 100%;
+            z-index: 10;
+        }
+        
+        .header-title-input { background: transparent; border: none; color: var(--elite-green); font-family: 'Syncopate'; font-size: 0.6rem; outline: none; text-transform: uppercase; flex-grow: 1; min-width: 0; position: relative; z-index: 11; cursor: text; }
+        
+        .header-icons { display: flex; gap: 12px; align-items: center; margin-left: 10px; flex-shrink: 0; position: relative; z-index: 20; }
+        .header-icons span { cursor: pointer; opacity: 0.3; font-size: 0.8rem; transition: 0.2s; padding: 5px; }
+        .header-icons span:hover { opacity: 1; color: var(--elite-green); }
+
+        .link-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.03); transition: 0.3s; position: relative; z-index: 5; }
+        .link-item:hover { background: rgba(1, 250, 191, 0.08); padding-left: 20px; }
+        .link-text { color: #aaa; text-decoration: none; font-size: 0.85rem; flex-grow: 1; cursor: pointer; }
+        .link-item:hover .link-text { color: var(--elite-green); }
+
+        .delete-trigger { width: 24px; height: 24px; display: flex; align-items: center; justify-content: flex-end; cursor: pointer; position: relative; z-index: 10; }
+        .delete-trigger::before { content: ''; width: 4px; height: 4px; background: #444; border-radius: 50%; transition: 0.2s; }
+        .delete-trigger:hover::before { content: '✕'; background: transparent; color: var(--vault-red); font-size: 0.75rem; font-weight: bold; transform: rotate(90deg); }
+
+        /* --- AUTH & VAULT --- */
+        #auth-screen { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 110000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(20px); }
+        .dot { width: 55px; height: 65px; border: 1px solid #222; display: flex; align-items: center; justify-content: center; color: var(--elite-green); font-family: 'Syncopate'; border-radius: 4px; }
+        .dot.filled { border-color: var(--elite-green); box-shadow: 0 0 15px var(--elite-green); }
+
+        #vault-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); display: none; align-items: center; justify-content: center; z-index: 9999; }
+        .vault-modal { width: 500px; background: #080808; border: 1px solid #1a1a1a; padding: 40px; border-top: 3px solid var(--vault-red); }
+        
+        .master-controls { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; z-index: 2000; }
+        .ctrl-btn { padding: 12px 20px; background: rgba(20, 20, 20, 0.7); border: 1px solid rgba(255, 255, 255, 0.05); color: #666; border-radius: 6px; font-family: 'Outfit'; font-size: 0.75rem; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
+        .ctrl-btn:hover { color: var(--elite-green); border-color: var(--elite-green); }
+        
+        .elite-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 120000; backdrop-filter: blur(10px); }
+        .elite-modal { width: 420px; background: #0a0a0a; border: 1px solid var(--border); padding: 35px; border-radius: 8px; }
+    </style>
+</head>
+<body onclick="bringToFront(event)">
+
+    <div class="top-bar">
+        <div class="left-wing"><div id="time">00:00<span>00</span></div></div>
+        <div class="center-wing"><a href="https://www.elitewrapz.uk" target="_blank" class="brand-link">ELITE <span>WRAPZ</span></a></div>
+        <div class="right-wing">
+            <div class="hud-search-wrap"><input type="text" class="hud-search-input" id="global-search" placeholder="SEARCH..." onkeydown="executeSearch(event)"></div>
+            <div style="position:relative;">
+                <div id="date-trigger" onclick="toggleCalendar(event)">DATE_LOADING</div>
+                <div id="calendar-popup">
+                    <div class="cal-header">
+                        <span style="cursor:pointer" onclick="changeMonth(-1, event)">‹</span>
+                        <span id="cal-month-year">MONTH 202X</span>
+                        <span style="cursor:pointer" onclick="changeMonth(1, event)">›</span>
+                    </div>
+                    <div class="cal-grid" id="cal-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="canvas" style="width: 100vw; height: 100vh; position: relative;"></div>
+
+    <div id="auth-screen">
+        <div style="font-family:'Syncopate'; font-size:0.6rem; color:var(--elite-green); letter-spacing:5px; margin-bottom:30px;">ENCRYPTED_SIGNAL_REQUIRED</div>
+        <div style="display:flex; gap:15px;" id="dot-container">
+            <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        </div>
+    </div>
+
+    <div id="vault-overlay">
+        <div class="vault-modal">
+            <div style="font-family:'Syncopate'; font-size:0.6rem; color:var(--vault-red); letter-spacing:4px; margin-bottom:25px;">RESTRICTED_ASSETS</div>
+            <div id="vault-items"></div>
+            <div style="display:flex; gap:10px; margin-top:25px; border-top:1px solid #1a1a1a; padding-top:20px;">
+                <button class="ctrl-btn" onclick="promptVaultAdd()">+ New Secret</button>
+                <button class="ctrl-btn" onclick="closeVault()" style="color:var(--vault-red)">Secure & Lock</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="elite-modal" class="elite-modal-overlay">
+        <div class="elite-modal">
+            <div id="modal-title" style="font-family:'Syncopate'; font-size:0.6rem; color:var(--elite-green); margin-bottom:25px; letter-spacing:2px;">SYSTEM_QUERY</div>
+            <div id="modal-inputs"></div>
+            <div style="display:flex; gap:12px;">
+                <button class="ctrl-btn" id="modal-confirm" style="flex:1; border-color:var(--elite-green); color:var(--elite-green);">EXECUTE</button>
+                <button class="ctrl-btn" onclick="closeModal()" style="flex:1;">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="master-controls">
+        <button class="ctrl-btn" onclick="spawnCategory()">+ List</button>
+        <button class="ctrl-btn" onclick="spawnNote()">+ Note</button>
+        <button class="ctrl-btn" onclick="triggerAuth()" style="border-color:#333">🔒 Vault</button>
+    </div>
+
+    <script>
+        let db = JSON.parse(localStorage.getItem('eliteHubV25')) || { 
+            categories: [], 
+            notes: [], 
+            vault: [{l:'Gateway ID', v:'54 02 69 02 45 51'}, {l:'EORI Number', v:'GB045268219000'}] 
+        };
+        const PASSCODE = "990704";
+        let inputBuffer = "";
+        let currentCalDate = new Date();
+
+        function init() { render(); updateClock(); setInterval(updateClock, 1000); renderCalendar(); }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('time').innerHTML = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}<span>${now.getSeconds().toString().padStart(2,'0')}</span>`;
+            document.getElementById('date-trigger').innerText = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
+        }
+
+        function toggleCalendar(e) { e.stopPropagation(); const c = document.getElementById('calendar-popup'); c.style.display = (c.style.display === 'flex' ? 'none' : 'flex'); }
+        function changeMonth(dir, e) { e.stopPropagation(); currentCalDate.setMonth(currentCalDate.getMonth() + dir); renderCalendar(); }
+        function renderCalendar() {
+            const grid = document.getElementById('cal-grid');
+            grid.innerHTML = '';
+            document.getElementById('cal-month-year').innerText = currentCalDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }).toUpperCase();
+            ['M','T','W','T','F','S','S'].forEach(d => grid.innerHTML += `<div style="color:#333; font-weight:900; font-size:0.5rem; padding-bottom:5px;">${d}</div>`);
+            const first = new Date(currentCalDate.getFullYear(), currentCalDate.getMonth(), 1).getDay();
+            const start = first === 0 ? 6 : first - 1;
+            for(let i=0; i<start; i++) grid.innerHTML += `<div></div>`;
+            for(let d=1; d<=new Date(currentCalDate.getFullYear(), currentCalDate.getMonth()+1, 0).getDate(); d++) {
+                const isToday = new Date().toDateString() === new Date(currentCalDate.getFullYear(), currentCalDate.getMonth(), d).toDateString();
+                grid.innerHTML += `<div style="padding:6px; border-radius:4px; ${isToday ? 'background:var(--elite-green); color:#000; font-weight:900;' : ''}">${d}</div>`;
+            }
+        }
+
+        function triggerAuth() { inputBuffer = ""; updateDots(); document.getElementById('auth-screen').style.display = 'flex'; }
+        window.addEventListener('keydown', (e) => {
+            if (document.getElementById('auth-screen').style.display === 'flex' && e.key >= '0' && e.key <= '9') {
+                inputBuffer += e.key; updateDots();
+                if (inputBuffer === PASSCODE) {
+                    document.getElementById('auth-screen').style.display = 'none';
+                    document.getElementById('vault-overlay').style.display = 'flex';
+                    renderVault();
+                } else if (inputBuffer.length >= 6) {
+                    openModal("ACCESS_DENIED", [], null, "Handshake failed. Protocol breach detected.");
+                    inputBuffer = ""; updateDots();
+                    setTimeout(() => { document.getElementById('auth-screen').style.display = 'none'; }, 2500);
+                }
+            }
+        });
+        function updateDots() {
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((d, i) => { d.innerText = i < inputBuffer.length ? "*" : ""; i < inputBuffer.length ? d.classList.add('filled') : d.classList.remove('filled'); });
+        }
+        function renderVault() {
+            document.getElementById('vault-items').innerHTML = db.vault.map((item) => `
+                <div class="vault-entry">
+                    <div><div style="font-size:0.55rem; color:#444; text-transform:uppercase;">${item.l}</div><div style="font-family:'Syncopate'; font-size:0.75rem;">${item.v}</div></div>
+                    <button class="ctrl-btn" style="font-size:0.5rem; padding:6px;" onclick="navigator.clipboard.writeText('${item.v}')">COPY</button>
+                </div>`).join('');
+        }
+        function promptVaultAdd() { openModal("NEW_SECRET", [{id:'l', label:'LABEL'}, {id:'v', label:'VALUE'}], (d) => { db.vault.push({l: d[0], v: d[1]}); renderVault(); save(); }); }
+        function closeVault() { document.getElementById('vault-overlay').style.display = 'none'; }
+
+        function render() {
+            const canvas = document.getElementById('canvas'); canvas.innerHTML = '';
+            db.categories.forEach((cat, idx) => canvas.appendChild(createCard(cat, idx, 'cat')));
+            db.notes.forEach((note, idx) => canvas.appendChild(createCard(note, idx, 'note')));
+            save();
+        }
+
+        function createCard(obj, idx, type) {
+            const el = document.createElement('div'); el.className = 'floating-card';
+            el.style.cssText = `left:${obj.x}px; top:${obj.y}px; width:${obj.w}px; height:${obj.h}px; z-index:${obj.z || 1};`;
+            el.innerHTML = `
+                <div class="card-header">
+                    <input class="header-title-input" value="${obj.title}" onchange="updateTitle('${type}', ${idx}, this.value)">
+                    <div class="header-icons">
+                        ${type==='cat'?`<span onclick="addLinkPrompt(event, ${idx})">＋</span>`:''}
+                        <span onclick="deleteObj(event, '${type}', ${idx})">✕</span>
+                    </div>
+                </div>
+                <div style="flex-grow:1; overflow:auto;">
+                    ${type==='cat' ? obj.links.map((l,li)=>`<div class="link-item"><a href="${l.u}" target="_blank" class="link-text">${l.n}</a><div class="delete-trigger" onclick="deleteLink(event, ${idx},${li})"></div></div>`).join('') :
+                    `<textarea style="width:100%; height:100%; background:transparent; border:none; color:#ccc; padding:15px; font-family:'Outfit'; outline:none; resize:none;" oninput="updateNoteText(${idx}, this.value)">${obj.text}</textarea>`}
+                </div>`;
+            setupInteractions(el, type, idx); return el;
+        }
+
+        function setupInteractions(el, type, idx) {
+            el.onmousedown = (e) => {
+                document.querySelectorAll('.floating-card').forEach(x=>x.style.zIndex=1); 
+                el.style.zIndex=100;
+
+                // Priority Check for icons and inputs
+                const isIcon = e.target.closest('.header-icons');
+                const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+                const isAction = e.target.closest('.delete-trigger') || e.target.tagName === 'A';
+
+                if (isIcon || isInput || isAction) return;
+
+                let p3 = e.clientX, p4 = e.clientY;
+
+                document.onmousemove = (mv) => {
+                    el.style.left = (el.offsetLeft - (p3 - mv.clientX)) + "px";
+                    el.style.top = (el.offsetTop - (p4 - mv.clientY)) + "px";
+                    p3 = mv.clientX; p4 = mv.clientY;
+                };
+
+                document.onmouseup = () => {
+                    document.onmousemove = null;
+                    document.onmouseup = null;
+                    if(type==='cat'){ db.categories[idx].x=el.offsetLeft; db.categories[idx].y=el.offsetTop; } 
+                    else { db.notes[idx].x=el.offsetLeft; db.notes[idx].y=el.offsetTop; }
+                    save();
+                };
+            };
+
+            new ResizeObserver(()=>{ 
+                if(type==='cat'){db.categories[idx].w=el.offsetWidth; db.categories[idx].h=el.offsetHeight;} 
+                else {db.notes[idx].w=el.offsetWidth; db.notes[idx].h=el.offsetHeight;} 
+                save(); 
+            }).observe(el);
+        }
+
+        function openModal(title, fields, onConfirm, msg = "") {
+            const m = document.getElementById('elite-modal');
+            document.getElementById('modal-title').innerText = title.toUpperCase();
+            const container = document.getElementById('modal-inputs');
+            if(msg) container.innerHTML = `<div style="color:#666; font-size:0.85rem; margin-bottom:25px; line-height:1.6;">${msg}</div>`;
+            else container.innerHTML = fields.map(f => `<input id="f-${f.id}" style="width:100%; background:#111; border:1px solid #222; padding:15px; color:#fff; font-family:'Outfit'; margin-bottom:15px; outline:none; border-radius:4px;" placeholder="${f.label}" autocomplete="off">`).join('');
+            m.style.display = 'flex';
+            document.getElementById('modal-confirm').onclick = () => { if(onConfirm) { const results = fields.map(f => document.getElementById(`f-${f.id}`).value); onConfirm(results); } closeModal(); };
+        }
+
+        function closeModal() { document.getElementById('elite-modal').style.display = 'none'; }
+        function spawnCategory() { db.categories.push({ title:'NEW LIST', x:100, y:150, w:260, h:220, links:[] }); render(); }
+        function spawnNote() { db.notes.push({ title:'QUICK NOTE', text:'', x:150, y:200, w:320, h:280 }); render(); }
+        function addLinkPrompt(e, idx) { e.stopPropagation(); openModal("ADD_RESOURCE", [{id:'n', label:'NAME'}, {id:'u', label:'URL'}], (d) => { db.categories[idx].links.push({n:d[0], u:d[1]}); render(); }); }
+        function deleteObj(e, t, i) { e.stopPropagation(); if(t==='cat')db.categories.splice(i,1); else db.notes.splice(i,1); render(); }
+        function deleteLink(e, ci, li) { e.stopPropagation(); db.categories[ci].links.splice(li,1); render(); }
+        function updateTitle(t,i,v) { if(t==='cat')db.categories[i].title=v; else db.notes[i].title=v; save(); }
+        function updateNoteText(i,v) { db.notes[i].text=v; save(); }
+        function save() { localStorage.setItem('eliteHubV25', JSON.stringify(db)); }
+        function executeSearch(e) { if(e.key === 'Enter') { window.open(`https://www.google.com/search?q=${encodeURIComponent(e.target.value)}`, '_blank'); e.target.value = ''; } }
+        function bringToFront(e) { const c=e.target.closest('.floating-card'); if(c){ document.querySelectorAll('.floating-card').forEach(x=>x.style.zIndex=1); c.style.zIndex=100; } }
+        window.onclick = function(e) { if(!e.target.closest('#date-trigger') && !e.target.closest('.elite-modal')) document.getElementById('calendar-popup').style.display='none'; };
+
+        init();
+    </script>
+</body>
+</html>
