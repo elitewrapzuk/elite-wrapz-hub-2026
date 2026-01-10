@@ -39,12 +39,8 @@
 
         /* --- STICKIES --- */
         .floating-card { position: absolute; background: var(--glass); border: 1px solid var(--border); border-radius: 8px; backdrop-filter: blur(25px); display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 180px; min-height: 100px; cursor: grab; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
-        
-        /* Updated Header for Stability */
         .card-header { padding: 14px 18px; background: rgba(1, 250, 191, 0.05); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; width: 100%; overflow: hidden; }
         .header-title-input { background: transparent; border: none; color: var(--elite-green); font-family: 'Syncopate'; font-size: 0.75rem; font-weight: 700; outline: none; text-transform: uppercase; flex: 1; min-width: 0; margin-right: 10px; }
-        
-        /* Forces buttons to never shrink or disappear */
         .header-btn-group { display: flex; gap: 12px; align-items: center; flex-shrink: 0; }
 
         .delete-dot { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; transition: 0.2s; position: relative; }
@@ -53,7 +49,6 @@
         .delete-dot:hover::before { opacity: 0; transform: scale(0); }
         .delete-dot:hover span { opacity: 1; transform: scale(1); }
 
-        /* Button Link Reset (No Blue) */
         .link-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,0.02); transition: 0.2s; }
         .link-item:hover { background: rgba(1, 250, 191, 0.05); }
         .link-item a { color: #888; text-decoration: none; font-size: 0.85rem; flex: 1; transition: 0.2s; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -64,12 +59,11 @@
         .dot-auth { width: 60px; height: 70px; border: 1px solid #222; display: flex; align-items: center; justify-content: center; color: var(--elite-green); font-family: 'Syncopate'; border-radius: 6px; font-size: 1.5rem; }
         .dot-auth.filled { border-color: var(--elite-green); box-shadow: 0 0 20px rgba(1, 250, 191, 0.4); }
         
-        /* Vault Styling */
         .vault-label { font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
         .vault-value { font-family: 'Syncopate'; font-size: 1rem; color: #fff; letter-spacing: 1px; }
 
-        .master-controls { position: fixed; bottom: 35px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; z-index: 10000; }
-        .ctrl-btn { padding: 12px 24px; background: rgba(15, 15, 15, 0.9); border: 1px solid rgba(255, 255, 255, 0.05); color: #777; border-radius: 4px; font-family: 'Outfit'; font-size: 0.7rem; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
+        .master-controls { position: fixed; bottom: 35px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; z-index: 10000; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
+        .ctrl-btn { padding: 12px 20px; background: rgba(15, 15, 15, 0.9); border: 1px solid rgba(255, 255, 255, 0.05); color: #777; border-radius: 4px; font-family: 'Outfit'; font-size: 0.65rem; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
         .ctrl-btn:hover { color: var(--elite-green); border-color: var(--elite-green); }
     </style>
 </head>
@@ -116,6 +110,8 @@
         <button class="ctrl-btn" onclick="spawnCategory()">+ List</button>
         <button class="ctrl-btn" onclick="spawnNote()">+ Note</button>
         <button class="ctrl-btn" onclick="triggerAuth()">🔒 Vault</button>
+        <button class="ctrl-btn" onclick="exportData()">💾 Export</button>
+        <button class="ctrl-btn" onclick="importData()">📂 Import</button>
         <button class="ctrl-btn" onclick="resetView()">Center</button>
     </div>
 
@@ -153,8 +149,34 @@
             document.getElementById('viewport').style.backgroundPosition = `${posX}px ${posY}px`;
         }
 
+        // --- DATA MGMT ---
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+            const dl = document.createElement('a');
+            dl.setAttribute("href", dataStr);
+            dl.setAttribute("download", `ELITE_HUB_${new Date().toLocaleDateString().replace(/\//g,'-')}.json`);
+            document.body.appendChild(dl); dl.click(); dl.remove();
+        }
+
+        function importData() {
+            const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json';
+            inp.onchange = e => {
+                const f = e.target.files[0];
+                const r = new FileReader();
+                r.onload = ev => {
+                    try {
+                        const content = JSON.parse(ev.target.result);
+                        if (content.categories && content.notes) {
+                            db = content; save(); render(); alert("SYSTEM_RESTORE_COMPLETE");
+                        }
+                    } catch (err) { alert("DATA_CORRUPT"); }
+                }
+                r.readAsText(f);
+            };
+            inp.click();
+        }
+
         function triggerAuth() { inputBuffer = ""; updateAuthDots(); document.getElementById('auth-screen').style.display = 'flex'; }
-        
         window.addEventListener('keydown', (e) => {
             if (document.getElementById('auth-screen').style.display === 'flex' && e.key >= '0' && e.key <= '9') {
                 inputBuffer += e.key; updateAuthDots();
@@ -179,7 +201,6 @@
                 grid.innerHTML += `<div style="padding:8px; border-radius:4px; ${isToday ? 'background:var(--elite-green); color:#000;' : ''}">${d}</div>`;
             }
         }
-
         function toggleCalendar(e) { e.stopPropagation(); const c = document.getElementById('calendar-popup'); c.style.display = (c.style.display === 'flex' ? 'none' : 'flex'); }
         function changeMonth(dir, e) { e.stopPropagation(); currentCalDate.setMonth(currentCalDate.getMonth() + dir); renderCalendar(); }
 
